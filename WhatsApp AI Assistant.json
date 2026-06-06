@@ -1,0 +1,336 @@
+{
+  "name": "WhatsApp AI Assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 📱 WhatsApp AI Assistant Setup\n\n**Before running:**\n1. Configure WhatsApp Business Cloud credentials\n2. Set up OpenAI API key\n3. Connect Google Calendar (for meeting scheduling)\n4. Select Google Sheets document and sheet name\n5. Populate the Knowledge Base vector store with your company data",
+        "height": 280,
+        "width": 380,
+        "color": 4
+      },
+      "id": "f872179c-7df1-4507-8502-cc2779fbb13b",
+      "name": "Sticky Note b58f917d",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        352,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 💾 Conversation Logging\n\nEvery conversation is automatically saved to Google Sheets with:\n- Timestamp\n- Customer phone number\n- Original message\n- AI response\n- Message ID",
+        "height": 240,
+        "width": 380,
+        "color": 2
+      },
+      "id": "707c37fd-82f1-4fd8-b1bd-28ed755ea66e",
+      "name": "Sticky Note bffa59d2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        784,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "updates": [
+          "messages"
+        ],
+        "options": {}
+      },
+      "id": "8e933f8b-d37e-4848-b927-660f3acad347",
+      "name": "WhatsApp Trigger",
+      "type": "n8n-nodes-base.whatsAppTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        400
+      ],
+      "webhookId": "9ff89d6f-08ac-4544-b671-3b2ffb3d8ea6"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('WhatsApp Trigger').item.json[\"entry[0]\"][\"changes[0]\"].value[\"messages[0]\"].text.body }}",
+        "options": {
+          "systemMessage": "You are a helpful business assistant for WhatsApp. You can:\n1. Answer questions using the Knowledge Base tool to search company information\n2. Schedule meetings using the Google Calendar Tool\n\nAlways be professional, concise, and helpful. When scheduling meetings, confirm details with the user first.",
+          "maxIterations": 10
+        }
+      },
+      "id": "5f3e977c-0d70-43e5-8876-f25c66e3e6a2",
+      "name": "WhatsApp AI Assistant",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        624,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "dcc6be75-7377-4cf5-87e2-2bfe2703f6b7",
+      "name": "OpenAI Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        464,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('WhatsApp Trigger').item.json[\"entry[0]\"][\"changes[0]\"].value[\"messages[0]\"].from }}",
+        "contextWindowLength": 10
+      },
+      "id": "539c9022-3304-476e-8093-25ade3d96951",
+      "name": "Conversation Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        592,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Search the company knowledge base for product information, policies, and frequently asked questions",
+        "memoryKey": {
+          "__rl": true,
+          "mode": "list",
+          "value": "company_knowledge"
+        }
+      },
+      "id": "f5b43a58-721a-4e3b-b271-ecc7f66e7266",
+      "name": "Knowledge Base",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
+      "typeVersion": 1.3,
+      "position": [
+        720,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "2fc4ee00-9a8c-4952-94b6-83cad2c841e1",
+      "name": "OpenAI Embeddings",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        800,
+        832
+      ]
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "end": "={{ $now.plus(1, \"hour\") }}",
+        "additionalFields": {
+          "attendees": [
+            "={{ $fromAI(\"attendeeEmail\", \"Attendee email address\") }}"
+          ],
+          "description": "={{ $fromAI(\"description\", \"Meeting description\") }}",
+          "summary": "={{ $fromAI(\"summary\", \"Meeting title\") }}"
+        }
+      },
+      "id": "2037398a-e2bc-47cf-adfc-d61a52e14bbd",
+      "name": "Google Calendar Tool",
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        1008,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "timestamp",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "phone",
+              "name": "phone",
+              "value": "={{ $('WhatsApp Trigger').item.json[\"entry[0]\"][\"changes[0]\"].value[\"messages[0]\"].from }}",
+              "type": "string"
+            },
+            {
+              "id": "message",
+              "name": "message",
+              "value": "={{ $('WhatsApp Trigger').item.json[\"entry[0]\"][\"changes[0]\"].value[\"messages[0]\"].text.body }}",
+              "type": "string"
+            },
+            {
+              "id": "response",
+              "name": "response",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            },
+            {
+              "id": "messageId",
+              "name": "messageId",
+              "value": "={{ $('WhatsApp Trigger').item.json[\"entry[0]\"][\"changes[0]\"].value[\"messages[0]\"].id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "334c88c7-3cfc-4cf8-a366-92730890846e",
+      "name": "Prepare Log Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1216,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "id": "1aabe13e-e6db-4004-9a4a-6eebe793dc49",
+      "name": "Save to Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1440,
+        400
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "WhatsApp Trigger": {
+      "main": [
+        [
+          {
+            "node": "WhatsApp AI Assistant",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WhatsApp AI Assistant": {
+      "main": [
+        [
+          {
+            "node": "Prepare Log Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "WhatsApp AI Assistant",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversation Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "WhatsApp AI Assistant",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Knowledge Base": {
+      "ai_tool": [
+        [
+          {
+            "node": "WhatsApp AI Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Knowledge Base",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Calendar Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "WhatsApp AI Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Log Data": {
+      "main": [
+        [
+          {
+            "node": "Save to Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "0fab5129-47c4-4ce6-9583-e332e3b306c1",
+  "meta": {
+    "instanceId": "341114744a100b8537e697a74159fa7bb52a7b69030f9fe6fbfb9ec6cf602ff5"
+  },
+  "nodeGroups": [],
+  "id": "dGHjaphKx3d0yRNl",
+  "tags": []
+}
