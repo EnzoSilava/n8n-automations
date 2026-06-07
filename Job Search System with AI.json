@@ -1,0 +1,414 @@
+{
+  "name": "Job Search System with AI",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "id": "88c576f6-0fd6-4d92-804b-3dd7f1ddf51b",
+      "name": "Daily Job Search",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        240,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "url": "<__PLACEHOLDER_VALUE__Job API URL (e.g., https://api.example.com/jobs)__>",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "area",
+              "value": "<__PLACEHOLDER_VALUE__Job area/category (e.g., technology, marketing)__>"
+            },
+            {
+              "name": "limit",
+              "value": "20"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "356879c2-c21d-47bb-a28d-da3055c09a81",
+      "name": "Fetch Job Listings",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        464,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.title }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7678688e-4de9-449a-bbf3-24ce19c31316",
+      "name": "Filter by Area",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        688,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "status",
+              "value": "completed",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "message",
+              "value": "=Processed jobs on {{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "387fd5f5-0951-4c63-89bc-39605f873184",
+      "name": "Done Processing",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1200,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Summarize this job posting in 2-3 sentences, highlighting key requirements and benefits:\n\nTitle: {{ $json.title }}\nCompany: {{ $json.company }}\nLocation: {{ $json.location }}\nDescription: {{ $json.description }}",
+        "options": {
+          "systemMessage": "You are a helpful assistant that summarizes job postings concisely and clearly."
+        }
+      },
+      "id": "2634b141-387c-4f02-9554-80eb7c974376",
+      "name": "Summarize Job with AI",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1136,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "95fc045c-4ab8-45a9-a1af-5db944a5fff4",
+      "name": "OpenAI Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1216,
+        736
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "jobTitle",
+              "value": "={{ $json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "company",
+              "value": "={{ $json.company }}",
+              "type": "string"
+            },
+            {
+              "id": "3",
+              "name": "location",
+              "value": "={{ $json.location }}",
+              "type": "string"
+            },
+            {
+              "id": "4",
+              "name": "summary",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            },
+            {
+              "id": "5",
+              "name": "url",
+              "value": "={{ $json.url }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "36394381-b1b8-4db8-a13e-8e8a0af62a11",
+      "name": "Format Job Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1488,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "or",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "<__PLACEHOLDER_VALUE__Notification channel: email or telegram__>",
+              "rightValue": "email",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "543487b0-3fc4-421d-9ff2-a6f4c048e7f6",
+      "name": "Check Notification Preference",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1712,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "<__PLACEHOLDER_VALUE__Recipient email address__>",
+        "subject": "=New Job Opportunities - {{ $now.toFormat(\"MMMM d, yyyy\") }}",
+        "message": "=<h2>{{ $json.jobTitle }}</h2>\n<p><strong>Company:</strong> {{ $json.company }}</p>\n<p><strong>Location:</strong> {{ $json.location }}</p>\n<p><strong>Summary:</strong> {{ $json.summary }}</p>\n<p><a href=\"{{ $json.url }}\">View Job Posting</a></p>",
+        "options": {}
+      },
+      "id": "bcc6c2c3-4f6f-4555-88e3-ab41f167568a",
+      "name": "Send Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1936,
+        624
+      ],
+      "webhookId": "5fe75aab-15ef-4a10-b0f8-8fe40a22338d"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "0e231a75-e250-44c7-9cfb-4b13ef471c9a",
+      "name": "Loop Through Jobs",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        912,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "<__PLACEHOLDER_VALUE__Telegram chat ID__>",
+        "text": "=🔔 *New Job Opportunity*\n\n*{{ $json.jobTitle }}*\n\n🏢 Company: {{ $json.company }}\n📍 Location: {{ $json.location }}\n\n📝 Summary:\n{{ $json.summary }}\n\n🔗 [View Job]({{ $json.url }})",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "35863076-50b1-498c-8be1-5f46ae0524e6",
+      "name": "Send Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1936,
+        816
+      ],
+      "webhookId": "a0ba5845-ec95-413c-b0f7-ae000cce5d1b"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Daily Job Search": {
+      "main": [
+        [
+          {
+            "node": "Fetch Job Listings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Job Listings": {
+      "main": [
+        [
+          {
+            "node": "Filter by Area",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter by Area": {
+      "main": [
+        [
+          {
+            "node": "Loop Through Jobs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize Job with AI": {
+      "main": [
+        [
+          {
+            "node": "Format Job Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Summarize Job with AI",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Job Data": {
+      "main": [
+        [
+          {
+            "node": "Check Notification Preference",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Notification Preference": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email": {
+      "main": [
+        [
+          {
+            "node": "Loop Through Jobs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Through Jobs": {
+      "main": [
+        [
+          {
+            "node": "Done Processing",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Summarize Job with AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Telegram": {
+      "main": [
+        [
+          {
+            "node": "Loop Through Jobs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "3b624199-f664-4290-b99e-30dc757c1840",
+  "meta": {
+    "instanceId": "341114744a100b8537e697a74159fa7bb52a7b69030f9fe6fbfb9ec6cf602ff5"
+  },
+  "nodeGroups": [],
+  "id": "qvZ16glojuUqvHJ8",
+  "tags": []
+}
