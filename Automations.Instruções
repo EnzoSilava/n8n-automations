@@ -1,0 +1,34 @@
+1. LinkedIn Content Generator
+Descrição: Workflow automatizado para criação e publicação de conteúdo estratégico para o LinkedIn utilizando Inteligência Artificial. A partir de um tema inicial fornecido pelo usuário, o sistema gera de forma autônoma uma postagem estruturada e otimizada para engajamento.
+
+-Como funciona: É acionado manualmente através de um gatilho (Manual Trigger), envia o tema para um Agente de IA (LangChain) integrado ao modelo GPT-5 Mini da OpenAI, que gera o texto seguindo regras rígidas de copywriting (gancho inicial, parágrafos curtos, CTA e hashtags). O output é estruturado via Output Parser, formatado e publicado diretamente no perfil do LinkedIn configurado.
+
+-Principais Nós/Ferramentas: Manual Trigger, LangChain Agent, OpenAI Chat Model (gpt-5-mini), Structured Output Parser, Set Node, LinkedIn Node.
+
+2. Price Monitor - Web Scraping + Telegram
+Descrição: Monitor de preços automatizado com foco em e-commerce brasileiro (Amazon, Mercado Livre e Kabum). O workflow realiza varreduras periódicas em páginas de produtos, analisa flutuações de valores e dispara alertas em tempo real caso encontre promoções agressivas ou novos itens.
+
+-Como funciona: Executado de hora em hora por um Schedule Trigger. Ele lê uma lista de produtos estruturada em um array, faz requisições HTTP para extrair o código HTML das páginas e utiliza expressões regulares (Regex) em JavaScript para capturar o preço atual. O sistema cruza o valor atual com o histórico salvo em um banco de dados interno (Data Table). Se o preço cair 10% ou mais (configurado como promoção) ou se for um produto inédito, um alerta formatado com emojis e link direto é enviado via Telegram.
+
+-Principais Nós/Ferramentas: Schedule Trigger, Set Node, Code Node (JavaScript/Regex), HTTP Request, Data Table (n8n), Filter Node, Telegram Node.
+
+3. Job Search System with AI
+Descrição: Sistema automatizado de busca, filtragem e sumarização de vagas de emprego. O objetivo é poupar tempo na busca diária por oportunidades de trabalho, entregando resumos direto na preferência do usuário (e-mail ou Telegram).
+
+-Como funciona: Roda diariamente às 09:00 através de um Schedule Trigger. Ele consome uma API externa de empregos especificando a área de interesse. Os resultados passam por um filtro inicial e são processados individualmente em um loop de lotes (Split in Batches). Para cada vaga, um modelo de IA (GPT-5 Mini) lê a descrição completa e gera um resumo conciso de 2 a 3 linhas com os principais requisitos e benefícios. Por fim, o fluxo checa a preferência do usuário e envia a oportunidade formatada via Gmail ou Telegram.
+
+-Principais Nós/Ferramentas: Schedule Trigger, HTTP Request, Filter Node, Split in Batches, LangChain Agent (gpt-5-mini), If Node, Gmail Node, Telegram Node.
+
+4. WhatsApp AI Assistant
+Descrição: Assistente virtual corporativo inteligente integrado ao WhatsApp Business. O robô é capaz de interagir de forma contextual com clientes, respondendo dúvidas com base em documentos da empresa e agendando compromissos de forma autônoma.
+
+-Como funciona: O fluxo inicia sempre que uma nova mensagem chega via WhatsApp Trigger. O texto é enviado para um Agente de IA dotado de memória de curto prazo (para não perder o fio da conversa). O agente usa duas ferramentas (Tools): o Knowledge Base (que consulta uma base de vetores com dados e políticas da empresa previamente processados por embeddings da OpenAI) e o Google Calendar Tool (para criar reuniões diretamente na agenda). Após a interação, todos os logs da conversa (quem enviou, mensagem e resposta da IA) são salvos em uma planilha do Google Sheets para auditoria.
+
+-Principais Nós/Ferramentas: WhatsApp Trigger, LangChain Agent (gpt-5-mini), Window Buffer Memory, Vector Store In-Memory, OpenAI Embeddings, Google Calendar Tool, Google Sheets Node.
+
+5. AI Study Assistant
+Descrição: Gerador automático de materiais de estudo a partir de arquivos digitais. Ideal para estudantes ou criadores de conteúdo educacional que precisam transformar PDFs densos em ferramentas práticas de memorização.
+
+-Como funciona: O usuário faz o upload manual de um arquivo PDF. O nó de extração de arquivos (Extract from File) lê o binário e converte todo o conteúdo do documento em texto puro. Esse bloco de texto é enviado ao modelo GPT-5 Mini, orientado por uma mensagem de sistema focada em educação. A IA analisa o conteúdo e cria três coisas de forma estruturada (via JSON): um resumo de 2 a 3 parágrafos, uma lista de 5 flashcards (pergunta e resposta) e 5 questões práticas divididas por níveis de dificuldade. O resultado final é guardado em uma tabela interna de dados (Data Table) com a data de criação.
+
+-Principais Nós/Ferramentas: Manual Trigger, Extract from File (PDF), LangChain Agent (gpt-5-mini), Structured Output Parser, Data Table (n8n).
